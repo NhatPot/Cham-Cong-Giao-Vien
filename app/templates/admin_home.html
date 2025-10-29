@@ -127,7 +127,7 @@
         Export CSV
       </a>
     </div>
-    
+
     <div class="overflow-x-auto">
       <table class="w-full border-collapse border border-gray-300">
         <thead>
@@ -173,26 +173,7 @@
     <h3 class="text-lg font-semibold mb-4">Buổi học tháng {{ current_month }}</h3>
     <div class="space-y-2">
       {% for session in sessions %}
-      <div id="session-{{ session.id }}" class="border rounded p-3 flex justify-between items-center">
-        <div>
-          <div class="font-medium">Session #{{ session.id }} - {{ session.topic or 'Không có chủ đề' }}</div>
-          <div class="text-sm text-gray-600">
-            {{ session.start_dt.strftime('%d/%m/%Y %H:%M') }} - {{ session.end_dt.strftime('%H:%M') }}
-          </div>
-        </div>
-        <div class="text-sm space-x-2">
-          <a href="/kiosk/session/{{ session.id }}" 
-             class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" target="_blank">
-            Mở Kiosk
-          </a>
-          <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                  hx-delete="/admin/session/{{ session.id }}"
-                  hx-confirm="Xóa buổi học này cùng toàn bộ bản ghi điểm danh?"
-                  hx-target="#session-{{ session.id }}" hx-swap="outerHTML">
-            Xóa
-          </button>
-        </div>
-      </div>
+      {% include 'partials/session_item.html' %}
       {% endfor %}
     </div>
   </div>

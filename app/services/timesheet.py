@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
-from app.models import TeacherCheckin, ClassSession
+from app.models import TeacherCheckin, ClassSession, TimesheetOverride
 
 
 def _overlap_seconds(checkin_dt, checkout_dt, start_dt, end_dt) -> int:
@@ -14,6 +14,15 @@ def _overlap_seconds(checkin_dt, checkout_dt, start_dt, end_dt) -> int:
 
 
 def get_month_hours(db: Session, teacher_id: int, month: str) -> float:
+    # Override first
+    override = (
+        db.query(TimesheetOverride)
+        .filter(TimesheetOverride.teacher_id == teacher_id, TimesheetOverride.month == month)
+        .first()
+    )
+    if override is not None:
+        return float(round(override.hours, 2))
+
     # month: YYYY-MM
     year, mon = map(int, month.split("-"))
     start = datetime(year, mon, 1)
@@ -26,7 +35,6 @@ def get_month_hours(db: Session, teacher_id: int, month: str) -> float:
     )
     seconds = 0
     for r in q.all():
-        # min(checkout, end) - max(checkin, start)
         session = db.query(ClassSession).get(r.session_id)
         seconds += _overlap_seconds(r.checkin_dt, r.checkout_dt, session.start_dt, session.end_dt)
     return round(seconds / 3600.0, 2)

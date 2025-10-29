@@ -10,6 +10,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "changeme-secret"
     TZ: str = "Asia/Ho_Chi_Minh"
     ORG_NAME: str = "Sao Viet IT"
+    # Window config (minutes)
+    CHECKIN_EARLY_MIN: int = 60   # cho phép check-in sớm tối đa
+    CHECKIN_LATE_MIN: int = 60    # cho phép check-in trễ tối đa sau start
+    CHECKOUT_EARLY_MIN: int = 60  # cho phép check-out sớm trước end
+    CHECKOUT_LATE_MIN: int = 120  # cho phép check-out trễ sau end
+    # Bật để bỏ qua kiểm tra khung giờ cho thao tác thủ công (không áp dụng cho QR)
+    ALLOW_MANUAL_ANYTIME: bool = False
 
     class Config:
         env_file = ".env"

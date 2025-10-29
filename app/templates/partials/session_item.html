@@ -1,0 +1,24 @@
+<div id="session-{{ session.id }}" class="border rounded p-3 flex justify-between items-center">
+  <div class="space-y-1">
+    <div class="font-medium">Session #{{ session.id }}</div>
+    <form class="flex flex-wrap items-center gap-3" hx-post="/admin/session/{{ session.id }}/update" hx-target="#session-{{ session.id }}" hx-swap="outerHTML">
+      <label class="text-sm text-gray-600">Bắt đầu</label>
+      <input type="datetime-local" name="start_dt" value="{{ session.start_dt.strftime('%Y-%m-%dT%H:%M') }}" class="p-1 border rounded" />
+      <label class="text-sm text-gray-600">Kết thúc</label>
+      <input type="datetime-local" name="end_dt" value="{{ session.end_dt.strftime('%Y-%m-%dT%H:%M') }}" class="p-1 border rounded" />
+      <label class="text-sm text-gray-600">Chủ đề</label>
+      <input type="text" name="topic" value="{{ session.topic or '' }}" class="p-1 border rounded w-48" />
+      <button class="bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 ml-2">Lưu</button>
+    </form>
+  </div>
+  <div class="text-sm flex items-center gap-3">
+    <a href="/kiosk/session/{{ session.id }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" target="_blank">Mở Kiosk</a>
+    <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+            hx-delete="/admin/session/{{ session.id }}"
+            hx-confirm="Xóa buổi học này cùng toàn bộ bản ghi điểm danh?"
+            hx-target="#session-{{ session.id }}" hx-swap="outerHTML">
+      Xóa
+    </button>
+  </div>
+</div>
+

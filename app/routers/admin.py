@@ -175,6 +175,34 @@ def delete_session(session_id: int, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 
+@router.post("/admin/session/{session_id}/update", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def update_session(
+    request: Request,
+    session_id: int,
+    start_dt: str = Form(...),
+    end_dt: str = Form(...),
+    topic: str = Form(""),
+    db: Session = Depends(get_db)
+):
+    session = db.query(ClassSession).get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    try:
+        start_datetime = datetime.fromisoformat(start_dt)
+        end_datetime = datetime.fromisoformat(end_dt)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid datetime format")
+    session.start_dt = start_datetime
+    session.end_dt = end_datetime
+    session.topic = topic
+    db.commit()
+    db.refresh(session)
+    return templates.TemplateResponse(
+        "partials/session_item.html",
+        {"request": request, "session": session}
+    )
+
+
 @router.get("/admin/timesheet", dependencies=[Depends(require_admin)])
 def get_timesheet(
     month: str = Query(...),
@@ -223,3 +251,6 @@ def export_timesheet_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=timesheet_{month}.csv"}
     )
+
+
+ 

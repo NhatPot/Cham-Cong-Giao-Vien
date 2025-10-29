@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint, Float
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.db import Base
 
@@ -70,4 +70,17 @@ class TeacherCheckin(Base):
 
     __table_args__ = (
         UniqueConstraint("session_id", "teacher_id", "checkout_dt", name="uq_open_once"),
+    )
+
+
+class TimesheetOverride(Base):
+    __tablename__ = "timesheet_overrides"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id"), index=True)
+    month: Mapped[str] = mapped_column(String, index=True)  # YYYY-MM
+    hours: Mapped[float] = mapped_column(Float, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "month", name="uq_teacher_month_override"),
     )

@@ -117,10 +117,13 @@ def manual_checkin(magic_token: str, session_id: int = Form(...), db: Session = 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # windows: start_dt - 15' to start_dt + 30'
+    # Kiểm tra khung giờ: cho phép cấu hình qua settings
     now = datetime.now()
-    if not (session.start_dt - timedelta(minutes=15) <= now <= session.start_dt + timedelta(minutes=30)):
-        raise HTTPException(status_code=400, detail="Outside check-in window")
+    if not settings.ALLOW_MANUAL_ANYTIME:
+        early = timedelta(minutes=settings.CHECKIN_EARLY_MIN)
+        late = timedelta(minutes=settings.CHECKIN_LATE_MIN)
+        if not (session.start_dt - early <= now <= session.start_dt + late):
+            raise HTTPException(status_code=400, detail="Outside check-in window")
 
     # ensure only one open record per (session, teacher)
     open_rec = (
@@ -147,9 +150,12 @@ def manual_checkout(magic_token: str, session_id: int = Form(...), db: Session =
         raise HTTPException(status_code=404, detail="Session not found")
 
     now = datetime.now()
-    # windows: end_dt - 30' to end_dt + 60'
-    if not (session.end_dt - timedelta(minutes=30) <= now <= session.end_dt + timedelta(minutes=60)):
-        raise HTTPException(status_code=400, detail="Outside check-out window")
+    # Kiểm tra khung giờ checkout
+    if not settings.ALLOW_MANUAL_ANYTIME:
+        early = timedelta(minutes=settings.CHECKOUT_EARLY_MIN)
+        late = timedelta(minutes=settings.CHECKOUT_LATE_MIN)
+        if not (session.end_dt - early <= now <= session.end_dt + late):
+            raise HTTPException(status_code=400, detail="Outside check-out window")
 
     open_rec = (
         db.query(TeacherCheckin)
@@ -184,9 +190,11 @@ def scan_checkin(magic_token: str, request: ScanRequest, db: Session = Depends(g
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Check time window: start_dt - 15' to start_dt + 30'
+    # Check time window for QR (không bỏ qua bằng ALLOW_MANUAL_ANYTIME)
     now = datetime.now()
-    if not (session.start_dt - timedelta(minutes=15) <= now <= session.start_dt + timedelta(minutes=30)):
+    early = timedelta(minutes=settings.CHECKIN_EARLY_MIN)
+    late = timedelta(minutes=settings.CHECKIN_LATE_MIN)
+    if not (session.start_dt - early <= now <= session.start_dt + late):
         raise HTTPException(status_code=400, detail="Outside check-in window")
 
     # Ensure only one open record per (session, teacher)
@@ -223,8 +231,10 @@ def scan_checkout(magic_token: str, request: ScanRequest, db: Session = Depends(
         raise HTTPException(status_code=404, detail="Session not found")
 
     now = datetime.now()
-    # Check time window: end_dt - 30' to end_dt + 60'
-    if not (session.end_dt - timedelta(minutes=30) <= now <= session.end_dt + timedelta(minutes=60)):
+    # Check time window for QR
+    early = timedelta(minutes=settings.CHECKOUT_EARLY_MIN)
+    late = timedelta(minutes=settings.CHECKOUT_LATE_MIN)
+    if not (session.end_dt - early <= now <= session.end_dt + late):
         raise HTTPException(status_code=400, detail="Outside check-out window")
 
     open_rec = (
