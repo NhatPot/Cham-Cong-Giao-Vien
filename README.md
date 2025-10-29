@@ -1,63 +1,94 @@
-# Chấm công giáo viên - Hướng dẫn nhanh
+# Chấm công giáo viên
 
-Mục tiêu: Teacher check-in/out (magic link + QR), Admin tạo dữ liệu, không tính tiền (chỉ tính giờ).
+Hệ thống chấm công cho giáo viên: check-in/out bằng magic link hoặc quét QR; Admin tạo dữ liệu vận hành; tính giờ làm việc theo phiên dạy (không tính tiền).
 
-## 1) Chạy nhanh
+## Yêu cầu hệ thống
+- Python 3.11
+- SQLite (tích hợp sẵn, không cần cài thêm)
+- Trình duyệt hiện đại (Chrome/Edge) để quét QR
 
-### Linux (Ubuntu/Debian) - dùng conda (khuyến nghị)
-```bash
-conda create -n chamcong python=3.11 -y
-conda activate chamcong
-conda install -y -c conda-forge fastapi=0.115 pydantic=2.9 pydantic-core=2.23 uvicorn=0.30 sqlalchemy=2.0 jinja2 python-multipart python-dotenv qrcode pillow
+Khuyến nghị Windows dùng PowerShell và một trong hai cách quản lý môi trường:
+- venv + pip (đơn giản, mặc định)
+- conda (nếu đã dùng Anaconda/Miniconda)
 
-cd "/home/nhat/Cong Viec/Cham Cong Giao Vien"
-# Tạo .env (giá trị mẫu)
-cat > .env << 'EOF'
+## Cài đặt trên Windows (PowerShell)
+
+### Cách 1: Dùng venv + pip (khuyến nghị)
+```powershell
+# 1) Mở PowerShell tại thư mục dự án
+cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+
+# 2) Tạo và kích hoạt môi trường ảo
+python -m venv .venv
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+./.venv/Scripts/Activate.ps1
+
+# 3) Cập nhật pip và cài phụ thuộc
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# 4) Tạo file .env (giá trị mẫu)
+@'
 ADMIN_KEY=changeme-admin
 SECRET_KEY=changeme-secret
 TZ=Asia/Ho_Chi_Minh
 ORG_NAME=Sao Viet IT
-EOF
-
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+'@ | Out-File -Encoding utf8 .env
 ```
 
-### Windows - dùng conda
-```cmd
+### Cách 2: Dùng conda
+```powershell
 conda create -n chamcong python=3.11 -y
 conda activate chamcong
-conda install -y -c conda-forge fastapi=0.115 pydantic=2.9 pydantic-core=2.23 uvicorn=0.30 sqlalchemy=2.0 jinja2 python-multipart python-dotenv qrcode pillow
+pip install -r requirements.txt
 
-cd "C:\path\to\Cham Cong Giao Vien"
-(type nul > .env) & (echo ADMIN_KEY=changeme-admin>>.env) & (echo SECRET_KEY=changeme-secret>>.env) & (echo TZ=Asia/Ho_Chi_Minh>>.env) & (echo ORG_NAME=Sao Viet IT>>.env)
+# Hoặc cài theo phiên bản cố định (nếu không dùng requirements.txt)
+# conda install -y -c conda-forge fastapi=0.115 pydantic=2.9 pydantic-core=2.23 uvicorn=0.30 sqlalchemy=2.0 jinja2 python-multipart python-dotenv qrcode pillow
 
+# Tạo file .env
+@'
+ADMIN_KEY=changeme-admin
+SECRET_KEY=changeme-secret
+TZ=Asia/Ho_Chi_Minh
+ORG_NAME=Sao Viet IT
+'@ | Out-File -Encoding utf8 .env
+```
+
+## Chạy ứng dụng
+```powershell
+# Từ thư mục dự án, khi môi trường đã được kích hoạt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Ghi chú: Có thể dùng pip với `pip install -r requirements.txt` trong env conda nếu muốn.
+Sau khi chạy, mở:
+- Admin: http://localhost:8000/admin (dùng header `X-ADMIN-KEY: <ADMIN_KEY>`)
+- Giáo viên: http://localhost:8000/t/{magic_token}
+- Kiosk QR: http://localhost:8000/kiosk/session/{id}
 
-## 2) Dùng hệ thống
-- Admin: mở `http://localhost:8000/admin` với header `X-ADMIN-KEY: changeme-admin` (dùng ModHeader) để tạo giáo viên/lớp/buổi.
-- Teacher: mở `http://localhost:8000/t/{magic_token}` (token lấy từ Admin hoặc seed).
-- Kiosk QR: mở `http://localhost:8000/kiosk/session/{id}`.
+Gợi ý cài tiện ích ModHeader trên trình duyệt để gửi header `X-ADMIN-KEY` khi truy cập trang Admin.
 
-Mẹo lấy nhanh token/ID (Linux):
-```bash
-sqlite3 database.db "select id,name,magic_token from teachers;"
-sqlite3 database.db "select id,start_dt,end_dt from class_sessions;"
-```
+## Sử dụng nhanh cho Admin/Giáo viên
+- Admin: tạo giáo viên, lớp, buổi học; xem bảng công theo tháng; xuất CSV.
+- Giáo viên: nhận magic link, vào trang cá nhân để check-in/out hoặc quét QR.
+- Kiosk: hiển thị QR tự xoay định kỳ, giáo viên quét để điểm danh.
 
-## 3) Tính giờ
-- Công thức: min(checkout, end_dt) - max(checkin, start_dt), nếu âm thì 0.
-- Lịch sử tháng và tổng giờ có tại `Teacher -> Lịch sử` và `Admin -> bảng công`.
+## Cách tính giờ
+- Công thức mỗi phiên: `max(0, min(checkout, end_dt) - max(checkin, start_dt))`
+- Quy tắc thời gian:
+  - Check-in: từ start_dt − 15' đến start_dt + 30'
+  - Check-out: từ end_dt − 30' đến end_dt + 60'
+  - Auto-close: quá `end_dt + 60'` mà còn mở thì đặt `checkout_dt = end_dt` (method="auto")
 
-## 4) Lỗi thường gặp (ngắn gọn)
-- Lỗi pydantic/fastapi: tạo env conda mới và cài đúng phiên bản như trên.
-- Không vào được Admin: thiếu header `X-ADMIN-KEY`.
-- QR không quét: token hết hạn (30s) hoặc camera chưa cấp quyền.
-- Port 8000 bận: Linux `sudo lsof -i :8000 && sudo kill -9 <PID>`; Windows `netstat -ano | findstr :8000` + `taskkill /PID <PID> /F`.
+## Khắc phục sự cố trên Windows
+- Không kích hoạt được venv do ExecutionPolicy: chạy lệnh đặt `RemoteSigned` như ở bước cài đặt.
+- Thiếu gói/phụ thuộc: đảm bảo dùng Python 3.11 và cài bằng `pip install -r requirements.txt`.
+- Không vào được Admin: kiểm tra đã gửi header `X-ADMIN-KEY` khớp với `ADMIN_KEY` trong `.env`.
+- QR không quét: token hết hạn (30s) hoặc trình duyệt chưa cấp quyền camera.
+- Cổng 8000 bận:
+  - Kiểm tra PID: `netstat -ano | findstr :8000`
+  - Kết thúc tiến trình: `taskkill /PID <PID> /F`
 
-## 5) Cấu trúc thư mục (rút gọn)
+## Cấu trúc thư mục (rút gọn)
 ```
 app/
   main.py  db.py  models.py  schemas.py  security.py  seed.py
@@ -68,13 +99,13 @@ app/
 requirements.txt  .env  database.db
 ```
 
-## 6) Kiến trúc tổng thể (Demo mô hình)
+## Kiến trúc & API (rút gọn)
 
-### 6.1 Luồng chính
+### Luồng chính
 ```
-[Admin] --(X-ADMIN-KEY)--> /admin ----- tạo teacher/class/session -----> DB (SQLite)
-     |                                                    |
-     |                                                    +--> /kiosk/session/{id} (hiển thị QR xoay 25s)
+[Admin] --(X-ADMIN-KEY)--> /admin ---- tạo teacher/class/session -----> DB (SQLite)
+     |                                                     |
+     |                                                     +--> /kiosk/session/{id} (hiển thị QR xoay định kỳ)
      |
 [Teacher] --(magic link)--> /t/{magic_token}
      |-- Manual: POST /t/{magic_token}/checkin|checkout
@@ -83,7 +114,7 @@ requirements.txt  .env  database.db
 QR token: POST /qr/rotate hoặc GET /qr/generate/{id} -> token = base64url(session_id|exp).HMAC_SHA256
 ```
 
-### 6.2 Mô hình dữ liệu (SQLite)
+### Mô hình dữ liệu (SQLite)
 ```
 teachers(id, name, magic_token, hourly_rate, status)
 classes(id, name, room)
@@ -94,13 +125,7 @@ teacher_checkins(id, session_id, teacher_id, checkin_dt, checkout_dt, method)
 Ràng buộc logic: 1 record mở duy nhất cho (session, teacher) khi checkout_dt IS NULL
 ```
 
-### 6.3 Quy tắc thời gian
-- Check-in: từ start_dt − 15' đến start_dt + 30'
-- Check-out: từ end_dt − 30' đến end_dt + 60'
-- Tính giờ một buổi: `max(0, min(checkout,end_dt) - max(checkin,start_dt))`
-- Auto-close: khi quá `end_dt + 60'` mà còn mở thì đặt `checkout_dt = end_dt` (method="auto")
-
-### 6.4 Bản đồ API (rút gọn)
+### Bản đồ API (rút gọn)
 ```
 Teacher
 - GET  /t/{magic_token}
