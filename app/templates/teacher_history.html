@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="bg-blue-600 text-white p-4 rounded">
+    <h2 class="text-xl font-bold">Lịch sử chấm công - {{ teacher.name }}</h2>
+    <p class="text-blue-100">Tháng {{ month }}</p>
+  </div>
+
+  <!-- Summary -->
+  <div class="bg-white p-4 rounded shadow">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="text-center">
+        <div class="text-2xl font-bold text-blue-600">{{ "%.2f"|format(total_hours) }}</div>
+        <div class="text-sm text-gray-600">Tổng giờ</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-green-600">{{ checkins|length }}</div>
+        <div class="text-sm text-gray-600">Số buổi</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-purple-600">{{ "{:,}".format((total_hours * (teacher.hourly_rate or 0))|int) }}</div>
+        <div class="text-sm text-gray-600">Tổng tiền (VND)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkins List -->
+  <div class="bg-white rounded shadow">
+    <div class="p-4 border-b">
+      <h3 class="text-lg font-semibold">Chi tiết buổi học</h3>
+    </div>
+    
+    {% if checkins %}
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">Ngày</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">Thời gian</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">Check-in</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">Check-out</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">Giờ làm</th>
+            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">Phương thức</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for checkin in checkins %}
+          <tr>
+            <td class="px-4 py-3 text-sm">
+              {{ checkin.session.start_dt.strftime('%d/%m/%Y') }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">
+              {{ checkin.session.start_dt.strftime('%H:%M') }} - {{ checkin.session.end_dt.strftime('%H:%M') }}
+            </td>
+            <td class="px-4 py-3 text-sm">
+              {% if checkin.checkin_dt %}
+                {{ checkin.checkin_dt.strftime('%H:%M') }}
+              {% else %}
+                <span class="text-red-500">Chưa check-in</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-sm">
+              {% if checkin.checkout_dt %}
+                {{ checkin.checkout_dt.strftime('%H:%M') }}
+              {% else %}
+                <span class="text-orange-500">Chưa check-out</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-sm">
+              {% if checkin.checkin_dt and checkin.checkout_dt %}
+                {% set start_time = max(checkin.checkin_dt, checkin.session.start_dt) %}
+                {% set end_time = min(checkin.checkout_dt, checkin.session.end_dt) %}
+                {% if end_time > start_time %}
+                  {% set hours = ((end_time - start_time).total_seconds() / 3600) %}
+                  {{ "%.2f"|format(hours) }}h
+                {% else %}
+                  0h
+                {% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-sm">
+              <span class="px-2 py-1 text-xs rounded-full
+                {% if checkin.method == 'qr' %}bg-green-100 text-green-800
+                {% elif checkin.method == 'manual' %}bg-blue-100 text-blue-800
+                {% elif checkin.method == 'auto' %}bg-gray-100 text-gray-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ checkin.method or 'N/A' }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-8 text-center text-gray-500">
+      <div class="text-lg mb-2">Không có dữ liệu chấm công</div>
+      <div class="text-sm">Tháng {{ month }} chưa có buổi học nào</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex justify-between items-center">
+    <a href="/t/{{ teacher.magic_token }}" class="text-blue-600 underline">← Quay lại trang chính</a>
+    
+    <!-- Month selector -->
+    <div class="flex items-center space-x-2">
+      <label class="text-sm font-medium">Xem tháng khác:</label>
+      <input type="month" id="monthSelect" value="{{ month }}" class="px-3 py-1 border rounded">
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('monthSelect').addEventListener('change', function() {
+  const selectedMonth = this.value;
+  if (selectedMonth) {
+    window.location.href = `/t/{{ teacher.magic_token }}/history?month=${selectedMonth}`;
+  }
+});
+</script>
+{% endblock %}

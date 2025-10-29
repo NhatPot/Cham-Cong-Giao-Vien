@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="p-4 bg-white rounded shadow space-y-4">
+  <div class="text-center">
+    <h2 class="text-xl font-semibold mb-2">Quét QR Code</h2>
+    <p class="text-gray-600">Hướng camera về phía QR code trên màn hình kiosk</p>
+  </div>
+  
+  <div class="flex justify-center">
+    <video id="video" width="400" height="300" class="border rounded" style="display: none;"></video>
+    <canvas id="canvas" width="400" height="300" class="border rounded" style="display: none;"></canvas>
+  </div>
+  
+  <div class="text-center">
+    <button id="startBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Bắt đầu quét</button>
+    <button id="stopBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" style="display: none;">Dừng quét</button>
+  </div>
+  
+  <div id="result" class="text-center text-sm"></div>
+  
+  <div class="text-center">
+    <a href="/t/{{ teacher.magic_token }}" class="text-blue-600 underline">← Quay lại trang chính</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+let video, canvas, ctx, scanning = false;
+
+document.getElementById('startBtn').onclick = startScan;
+document.getElementById('stopBtn').onclick = stopScan;
+
+async function startScan() {
+  try {
+    video = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    ctx = canvas.getContext('2d');
+    
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    video.style.display = 'block';
+    canvas.style.display = 'block';
+    
+    video.onloadedmetadata = () => {
+      video.play();
+      scanning = true;
+      scanQR();
+    };
+    
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    
+  } catch (error) {
+    document.getElementById('result').innerHTML = '<div class="text-red-600">Không thể truy cập camera: ' + error.message + '</div>';
+  }
+}
+
+function stopScan() {
+  scanning = false;
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+  }
+  video.style.display = 'none';
+  canvas.style.display = 'none';
+  document.getElementById('startBtn').style.display = 'inline-block';
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('result').innerHTML = '';
+}
+
+function scanQR() {
+  if (!scanning) return;
+  
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    
+    if (code) {
+      console.log('QR Code detected:', code.data);
+      handleQRCode(code.data);
+      return;
+    }
+  }
+  
+  requestAnimationFrame(scanQR);
+}
+
+async function handleQRCode(token) {
+  try {
+    // Parse token to get session_id
+    const [payload, sig] = token.split('.');
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const [session_id_str, exp_str] = decoded.split('|');
+    const session_id = parseInt(session_id_str);
+    
+    // Determine if check-in or check-out
+    const response = await fetch(`/t/{{ teacher.magic_token }}/scan-checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: session_id, qr_token: token })
+    });
+    
+    if (response.ok) {
+      document.getElementById('result').innerHTML = '<div class="text-green-600">Check-in thành công!</div>';
+      setTimeout(() => {
+        window.location.href = '/t/{{ teacher.magic_token }}';
+      }, 2000);
+    } else {
+      // Try check-out
+      const response2 = await fetch(`/t/{{ teacher.magic_token }}/scan-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: session_id, qr_token: token })
+      });
+      
+      if (response2.ok) {
+        document.getElementById('result').innerHTML = '<div class="text-green-600">Check-out thành công!</div>';
+        setTimeout(() => {
+          window.location.href = '/t/{{ teacher.magic_token }}';
+        }, 2000);
+      } else {
+        const error = await response2.text();
+        document.getElementById('result').innerHTML = '<div class="text-red-600">Lỗi: ' + error + '</div>';
+      }
+    }
+  } catch (error) {
+    document.getElementById('result').innerHTML = '<div class="text-red-600">Lỗi xử lý QR: ' + error.message + '</div>';
+  }
+}
+</script>
+{% endblock %}

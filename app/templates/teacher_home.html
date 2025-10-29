@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-4">
+  <div class="p-4 bg-white rounded shadow">
+    <div class="font-semibold">Giáo viên: {{ teacher.name }}</div>
+    <div class="text-sm text-gray-600">Magic link: /t/{{ teacher.magic_token }}</div>
+  </div>
+
+  <div class="p-4 bg-white rounded shadow">
+    <h2 class="font-semibold mb-2">Buổi hôm nay</h2>
+    <div class="space-y-3">
+      {% for s in sessions %}
+      <div class="border rounded p-3">
+        <div class="font-medium">Session #{{ s.id }} | {{ s.start_dt }} → {{ s.end_dt }} | {{ s.topic or '' }}</div>
+        <form class="mt-2 flex gap-2" method="post" action="/t/{{ teacher.magic_token }}/checkin">
+          <input type="hidden" name="session_id" value="{{ s.id }}" />
+          <button class="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50" {% if open_by_session[s.id] and open_by_session[s.id].checkout_dt is none %}disabled{% endif %}>Check-in</button>
+        </form>
+        <form class="mt-2 flex gap-2" method="post" action="/t/{{ teacher.magic_token }}/checkout">
+          <input type="hidden" name="session_id" value="{{ s.id }}" />
+          <button class="px-3 py-1 bg-blue-600 text-white rounded {% if not open_by_session[s.id] or open_by_session[s.id].checkout_dt %}opacity-50{% endif %}" {% if not open_by_session[s.id] or open_by_session[s.id].checkout_dt %}disabled{% endif %}>Check-out</button>
+        </form>
+        <div class="mt-2 flex gap-2">
+          <a class="text-indigo-600 underline" href="/t/{{ teacher.magic_token }}/scan">Quét QR</a>
+          <span class="text-gray-300">|</span>
+          <a class="text-indigo-600 underline" href="/t/{{ teacher.magic_token }}/history?month={{ current_month }}">Lịch sử</a>
+        </div>
+      </div>
+      {% else %}
+      <div class="text-gray-600">Không có buổi hôm nay.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
