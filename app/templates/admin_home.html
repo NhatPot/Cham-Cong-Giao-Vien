@@ -41,6 +41,26 @@
         <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Tạo lớp</button>
       </form>
       <div id="class-result" class="mt-2"></div>
+      <!-- Danh sách lớp hiện có -->
+      <div class="mt-4">
+        <h4 class="font-medium mb-2">Danh sách lớp</h4>
+        <div class="space-y-2">
+          {% for class in classes %}
+          <div id="class-{{ class.id }}" class="border rounded p-2 flex justify-between items-center">
+            <div>
+              <div class="font-medium">{{ class.name }}</div>
+              <div class="text-xs text-gray-600">Phòng: {{ class.room or '—' }}</div>
+            </div>
+            <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                    hx-delete="/admin/class/{{ class.id }}"
+                    hx-confirm="Xóa lớp này? (Cùng với các buổi và điểm danh liên quan)"
+                    hx-target="#class-{{ class.id }}" hx-swap="outerHTML">
+              Xóa
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
     </div>
 
     <!-- Add Teacher to Class -->
@@ -117,11 +137,12 @@
             <th class="border border-gray-300 p-2 text-left">Tỷ lệ/giờ</th>
             <th class="border border-gray-300 p-2 text-left">Tổng tiền</th>
             <th class="border border-gray-300 p-2 text-left">Magic Link</th>
+            <th class="border border-gray-300 p-2 text-left">Hành động</th>
           </tr>
         </thead>
         <tbody>
           {% for item in teacher_hours %}
-          <tr>
+          <tr id="teacher-{{ item.teacher.id }}">
             <td class="border border-gray-300 p-2">{{ item.teacher.name }}</td>
             <td class="border border-gray-300 p-2">{{ "%.2f"|format(item.hours) }}</td>
             <td class="border border-gray-300 p-2">{{ "{:,}".format(item.teacher.hourly_rate or 0) }} VND</td>
@@ -131,6 +152,14 @@
                  class="text-blue-600 underline text-sm" target="_blank">
                 /t/{{ item.teacher.magic_token[:8] }}...
               </a>
+            </td>
+            <td class="border border-gray-300 p-2">
+              <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      hx-delete="/admin/teacher/{{ item.teacher.id }}"
+                      hx-confirm="Xóa giáo viên này? (Cùng với phân công và bản ghi điểm danh)"
+                      hx-target="#teacher-{{ item.teacher.id }}" hx-swap="outerHTML">
+                Xóa
+              </button>
             </td>
           </tr>
           {% endfor %}
@@ -144,18 +173,24 @@
     <h3 class="text-lg font-semibold mb-4">Buổi học tháng {{ current_month }}</h3>
     <div class="space-y-2">
       {% for session in sessions %}
-      <div class="border rounded p-3 flex justify-between items-center">
+      <div id="session-{{ session.id }}" class="border rounded p-3 flex justify-between items-center">
         <div>
           <div class="font-medium">Session #{{ session.id }} - {{ session.topic or 'Không có chủ đề' }}</div>
           <div class="text-sm text-gray-600">
             {{ session.start_dt.strftime('%d/%m/%Y %H:%M') }} - {{ session.end_dt.strftime('%H:%M') }}
           </div>
         </div>
-        <div class="text-sm">
+        <div class="text-sm space-x-2">
           <a href="/kiosk/session/{{ session.id }}" 
              class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" target="_blank">
             Mở Kiosk
           </a>
+          <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  hx-delete="/admin/session/{{ session.id }}"
+                  hx-confirm="Xóa buổi học này cùng toàn bộ bản ghi điểm danh?"
+                  hx-target="#session-{{ session.id }}" hx-swap="outerHTML">
+            Xóa
+          </button>
         </div>
       </div>
       {% endfor %}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -6,6 +6,7 @@ from app.db import get_db
 from app.models import Teacher, ClassSession, TeacherCheckin
 from app.main import settings
 from app.security import verify_token
+from app.services.timesheet import get_month_hours
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import os
@@ -51,6 +52,7 @@ def teacher_home(magic_token: str, request: Request, db: Session = Depends(get_d
         open_by_session[s.id] = open_rec
 
     # Get current month for history link
+    now = datetime.now()
     current_month = now.strftime("%Y-%m")
     
     return templates.TemplateResponse(

@@ -18,7 +18,7 @@ router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "..", "templates"))
 
 
-def require_admin(x_admin_key: str | None = Header(default=None)):
+def require_admin(x_admin_key: str | None = Header(default=None, alias="X-ADMIN-KEY")):
     if x_admin_key != settings.ADMIN_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -130,6 +130,49 @@ def create_session(
     db.commit()
     db.refresh(session)
     return {"status": "success", "session_id": session.id}
+
+
+@router.delete("/admin/teacher/{teacher_id}", dependencies=[Depends(require_admin)])
+def delete_teacher(teacher_id: int, db: Session = Depends(get_db)):
+    # Delete dependent records: checkins and class mappings
+    db.query(TeacherCheckin).filter(TeacherCheckin.teacher_id == teacher_id).delete()
+    db.query(ClassTeacher).filter(ClassTeacher.teacher_id == teacher_id).delete()
+    # Delete teacher
+    teacher = db.query(Teacher).get(teacher_id)
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    db.delete(teacher)
+    db.commit()
+    return {"status": "success"}
+
+
+@router.delete("/admin/class/{class_id}", dependencies=[Depends(require_admin)])
+def delete_class(class_id: int, db: Session = Depends(get_db)):
+    # Delete dependent: sessions -> checkins, then class mappings, then class
+    sessions = db.query(ClassSession).filter(ClassSession.class_id == class_id).all()
+    session_ids = [s.id for s in sessions]
+    if session_ids:
+        db.query(TeacherCheckin).filter(TeacherCheckin.session_id.in_(session_ids)).delete(synchronize_session=False)
+        db.query(ClassSession).filter(ClassSession.id.in_(session_ids)).delete(synchronize_session=False)
+    db.query(ClassTeacher).filter(ClassTeacher.class_id == class_id).delete()
+    clazz = db.query(Class).get(class_id)
+    if not clazz:
+        raise HTTPException(status_code=404, detail="Class not found")
+    db.delete(clazz)
+    db.commit()
+    return {"status": "success"}
+
+
+@router.delete("/admin/session/{session_id}", dependencies=[Depends(require_admin)])
+def delete_session(session_id: int, db: Session = Depends(get_db)):
+    # Delete dependent checkins then session
+    db.query(TeacherCheckin).filter(TeacherCheckin.session_id == session_id).delete()
+    session = db.query(ClassSession).get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    db.delete(session)
+    db.commit()
+    return {"status": "success"}
 
 
 @router.get("/admin/timesheet", dependencies=[Depends(require_admin)])

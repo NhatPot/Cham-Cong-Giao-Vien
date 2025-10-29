@@ -25,15 +25,11 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-# Include routers (they can be added later)
-try:
-    from app.routers import teacher, admin, qr
-    app.include_router(teacher.router)
-    app.include_router(admin.router)
-    app.include_router(qr.router)
-except Exception:
-    # Routers may not exist yet during initial scaffold
-    pass
+# Include routers
+from app.routers import teacher, admin, qr
+app.include_router(teacher.router)
+app.include_router(admin.router)
+app.include_router(qr.router)
 
 
 @app.get("/", response_class=HTMLResponse)
