@@ -7,8 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div class="max-w-4xl mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">{{ title or 'Cham Cong' }}</h1>
+  <div class="w-full max-w-none mx-0 p-0">
+    {% if show_header %}
+      <h1 class="text-2xl font-bold mb-4 px-8 py-6">{{ title or 'Cham Cong' }}</h1>
+    {% endif %}
     {% if content %}
       <div class="p-4 bg-white rounded shadow">{{ content }}</div>
     {% endif %}

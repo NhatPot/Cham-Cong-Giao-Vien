@@ -1,188 +1,234 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="space-y-6">
-  <!-- Header -->
-  <div class="bg-blue-600 text-white p-4 rounded">
-    <h1 class="text-2xl font-bold">Admin Panel - {{ current_month }}</h1>
-    <p class="text-blue-100">Quản lý giáo viên, lớp học và bảng công</p>
-  </div>
+<div class="flex gap-6 min-h-screen">
+  <!-- Sidebar -->
+  <aside class="w-72 bg-slate-800 text-white p-4 shrink-0 sticky top-0 self-start h-screen overflow-auto rounded-none">
+    <div class="text-xs uppercase text-slate-300 mb-2">Navigation</div>
+    <nav class="space-y-1" id="admin-nav">
+      <button data-target="#section-teachers" class="w-full text-left px-3 py-2 rounded bg-slate-700 hover:bg-slate-600">Giáo viên</button>
+      <button data-target="#section-classes" class="w-full text-left px-3 py-2 rounded hover:bg-slate-600">Lớp học</button>
+      <button data-target="#section-sessions" class="w-full text-left px-3 py-2 rounded hover:bg-slate-600">Buổi học</button>
+      <button data-target="#section-timesheet" class="w-full text-left px-3 py-2 rounded hover:bg-slate-600">Bảng công {{ current_month }}</button>
+    </nav>
+  </aside>
 
-  <!-- Forms Section -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- Create Teacher -->
-    <div class="bg-white p-4 rounded shadow">
-      <h3 class="text-lg font-semibold mb-3">Tạo giáo viên mới</h3>
-      <form hx-post="/admin/teacher" hx-target="#teacher-result" class="space-y-3">
-        <div>
-          <label class="block text-sm font-medium">Tên giáo viên</label>
-          <input type="text" name="name" required class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Tỷ lệ/giờ (VND)</label>
-          <input type="number" name="hourly_rate" value="120000" class="w-full p-2 border rounded">
-        </div>
-        <button type="submit" class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">Tạo giáo viên</button>
-      </form>
-      <div id="teacher-result" class="mt-2"></div>
+  <!-- Main content -->
+  <main class="flex-1 space-y-6">
+    <div class="bg-blue-600 text-white p-4 rounded">
+      <h1 class="text-2xl font-bold">Admin Panel</h1>
+      <p class="text-blue-100">Quản lý giáo viên, lớp học, buổi học và bảng công</p>
     </div>
 
-    <!-- Create Class -->
-    <div class="bg-white p-4 rounded shadow">
-      <h3 class="text-lg font-semibold mb-3">Tạo lớp học mới</h3>
-      <form hx-post="/admin/class" hx-target="#class-result" class="space-y-3">
+    <!-- Teachers Section -->
+    <section id="section-teachers" class="bg-white p-4 rounded shadow">
+      <h3 class="text-lg font-semibold mb-3">Giáo viên</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-medium">Tên lớp</label>
-          <input type="text" name="name" required class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Phòng học</label>
-          <input type="text" name="room" class="w-full p-2 border rounded">
-        </div>
-        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Tạo lớp</button>
-      </form>
-      <div id="class-result" class="mt-2"></div>
-      <!-- Danh sách lớp hiện có -->
-      <div class="mt-4">
-        <h4 class="font-medium mb-2">Danh sách lớp</h4>
-        <div class="space-y-2">
-          {% for class in classes %}
-          <div id="class-{{ class.id }}" class="border rounded p-2 flex justify-between items-center">
+          <h4 class="font-medium mb-2">Tạo giáo viên mới</h4>
+          <form hx-post="/admin/teacher" hx-target="#teacher-result" class="space-y-3">
             <div>
-              <div class="font-medium">{{ class.name }}</div>
-              <div class="text-xs text-gray-600">Phòng: {{ class.room or '—' }}</div>
+              <label class="block text-sm font-medium">Tên giáo viên</label>
+              <input type="text" name="name" required class="w-full p-2 border rounded">
             </div>
-            <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                    hx-delete="/admin/class/{{ class.id }}"
-                    hx-confirm="Xóa lớp này? (Cùng với các buổi và điểm danh liên quan)"
-                    hx-target="#class-{{ class.id }}" hx-swap="outerHTML">
-              Xóa
-            </button>
-          </div>
-          {% endfor %}
+            <div>
+              <label class="block text-sm font-medium">Tỷ lệ/giờ (VND)</label>
+              <input type="number" name="hourly_rate" value="120000" class="w-full p-2 border rounded">
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">Tạo giáo viên</button>
+          </form>
+          <div id="teacher-result" class="mt-2"></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border border-gray-300 p-2 text-left">Tên giáo viên</th>
+                <th class="border border-gray-300 p-2 text-left">Số giờ ({{ current_month }})</th>
+                <th class="border border-gray-300 p-2 text-left">Magic Link</th>
+                <th class="border border-gray-300 p-2 text-left">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in teacher_hours %}
+              <tr id="teacher-{{ item.teacher.id }}">
+                <td class="border border-gray-300 p-2">{{ item.teacher.name }}</td>
+                <td class="border border-gray-300 p-2">{{ "%.2f"|format(item.hours) }}h</td>
+                <td class="border border-gray-300 p-2">
+                  <a href="/t/{{ item.teacher.magic_token }}" class="text-blue-600 underline text-sm" target="_blank">
+                    /t/{{ item.teacher.magic_token[:8] }}...
+                  </a>
+                </td>
+                <td class="border border-gray-300 p-2">
+                  <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                          hx-delete="/admin/teacher/{{ item.teacher.id }}"
+                          hx-confirm="Xóa giáo viên này? (Cùng với phân công và bản ghi điểm danh)"
+                          hx-target="#teacher-{{ item.teacher.id }}" hx-swap="outerHTML">Xóa</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Add Teacher to Class -->
-    <div class="bg-white p-4 rounded shadow">
-      <h3 class="text-lg font-semibold mb-3">Thêm giáo viên vào lớp</h3>
-      <form hx-post="/admin/class/1/add-teacher" hx-target="#add-teacher-result" class="space-y-3">
+    <!-- Classes Section -->
+    <section id="section-classes" class="bg-white p-4 rounded shadow hidden">
+      <h3 class="text-lg font-semibold mb-3">Lớp học</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-medium">Lớp học</label>
-          <select name="class_id" class="w-full p-2 border rounded">
+          <h4 class="font-medium mb-2">Tạo lớp học mới</h4>
+          <form hx-post="/admin/class" hx-target="#class-result" class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium">Tên lớp</label>
+              <input type="text" name="name" required class="w-full p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Phòng học</label>
+              <input type="text" name="room" class="w-full p-2 border rounded">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Tạo lớp</button>
+          </form>
+          <div id="class-result" class="mt-2"></div>
+        </div>
+        <div>
+          <h4 class="font-medium mb-2">Danh sách lớp</h4>
+          <div class="space-y-2">
+            {% for class in classes %}
+            <div id="class-{{ class.id }}" class="border rounded p-2 flex justify-between items-center">
+              <div>
+                <div class="font-medium">{{ class.name }}</div>
+                <div class="text-xs text-gray-600">Phòng: {{ class.room or '—' }}</div>
+              </div>
+              <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      hx-delete="/admin/class/{{ class.id }}"
+                      hx-confirm="Xóa lớp này? (Cùng với các buổi và điểm danh liên quan)"
+                      hx-target="#class-{{ class.id }}" hx-swap="outerHTML">Xóa</button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-white rounded">
+        <h4 class="font-medium mb-2">Thêm giáo viên vào lớp</h4>
+        <form hx-post="/admin/class/1/add-teacher" hx-target="#add-teacher-result" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <select name="class_id" class="p-2 border rounded">
             {% for class in classes %}
             <option value="{{ class.id }}">{{ class.name }} ({{ class.room }})</option>
             {% endfor %}
           </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Giáo viên</label>
-          <select name="teacher_id" class="w-full p-2 border rounded">
+          <select name="teacher_id" class="p-2 border rounded">
             {% for teacher in teachers %}
             <option value="{{ teacher.id }}">{{ teacher.name }}</option>
             {% endfor %}
           </select>
-        </div>
-        <button type="submit" class="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700">Thêm vào lớp</button>
-      </form>
-      <div id="add-teacher-result" class="mt-2"></div>
-    </div>
+          <button class="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700">Thêm vào lớp</button>
+        </form>
+        <div id="add-teacher-result" class="mt-2"></div>
+      </div>
+    </section>
 
-    <!-- Create Session -->
-    <div class="bg-white p-4 rounded shadow">
-      <h3 class="text-lg font-semibold mb-3">Tạo buổi học</h3>
-      <form hx-post="/admin/session" hx-target="#session-result" class="space-y-3">
-        <div>
-          <label class="block text-sm font-medium">Lớp học</label>
-          <select name="class_id" required class="w-full p-2 border rounded">
-            {% for class in classes %}
-            <option value="{{ class.id }}">{{ class.name }}</option>
-            {% endfor %}
-          </select>
+    <!-- Sessions Section -->
+    <section id="section-sessions" class="bg-white p-4 rounded shadow hidden">
+      <h3 class="text-lg font-semibold mb-3">Buổi học tháng {{ current_month }}</h3>
+      <div class="grid grid-cols-1 gap-6">
+        <div class="bg-white">
+          <h4 class="font-medium mb-2">Tạo buổi học</h4>
+          <form hx-post="/admin/session" hx-target="#session-result" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div>
+              <label class="block text-sm font-medium">Lớp học</label>
+              <select name="class_id" required class="w-full p-2 border rounded">
+                {% for class in classes %}
+                <option value="{{ class.id }}">{{ class.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Bắt đầu</label>
+              <input type="datetime-local" name="start_dt" required class="w-full p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Kết thúc</label>
+              <input type="datetime-local" name="end_dt" required class="w-full p-2 border rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium">Chủ đề</label>
+              <input type="text" name="topic" class="w-full p-2 border rounded">
+            </div>
+            <div class="md:col-span-4">
+              <button class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">Tạo buổi học</button>
+            </div>
+          </form>
+          <div id="session-result" class="mt-2"></div>
         </div>
-        <div>
-          <label class="block text-sm font-medium">Thời gian bắt đầu</label>
-          <input type="datetime-local" name="start_dt" required class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Thời gian kết thúc</label>
-          <input type="datetime-local" name="end_dt" required class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium">Chủ đề</label>
-          <input type="text" name="topic" class="w-full p-2 border rounded">
-        </div>
-        <button type="submit" class="w-full bg-orange-600 text-white p-2 rounded hover:bg-orange-700">Tạo buổi học</button>
-      </form>
-      <div id="session-result" class="mt-2"></div>
-    </div>
-  </div>
 
-  <!-- Timesheet Section -->
-  <div class="bg-white p-4 rounded shadow">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold">Bảng công tháng {{ current_month }}</h3>
-      <a href="/admin/timesheet/export.csv?month={{ current_month }}" 
-         class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-        Export CSV
-      </a>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr class="bg-gray-100">
-            <th class="border border-gray-300 p-2 text-left">Tên giáo viên</th>
-            <th class="border border-gray-300 p-2 text-left">Số giờ</th>
-            <th class="border border-gray-300 p-2 text-left">Tỷ lệ/giờ</th>
-            <th class="border border-gray-300 p-2 text-left">Tổng tiền</th>
-            <th class="border border-gray-300 p-2 text-left">Magic Link</th>
-            <th class="border border-gray-300 p-2 text-left">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in teacher_hours %}
-          <tr id="teacher-{{ item.teacher.id }}">
-            <td class="border border-gray-300 p-2">{{ item.teacher.name }}</td>
-            <td class="border border-gray-300 p-2">{{ "%.2f"|format(item.hours) }}</td>
-            <td class="border border-gray-300 p-2">{{ "{:,}".format(item.teacher.hourly_rate or 0) }} VND</td>
-            <td class="border border-gray-300 p-2">{{ "{:,}".format((item.hours * (item.teacher.hourly_rate or 0))|int) }} VND</td>
-            <td class="border border-gray-300 p-2">
-              <a href="/t/{{ item.teacher.magic_token }}" 
-                 class="text-blue-600 underline text-sm" target="_blank">
-                /t/{{ item.teacher.magic_token[:8] }}...
-              </a>
-            </td>
-            <td class="border border-gray-300 p-2">
-              <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                      hx-delete="/admin/teacher/{{ item.teacher.id }}"
-                      hx-confirm="Xóa giáo viên này? (Cùng với phân công và bản ghi điểm danh)"
-                      hx-target="#teacher-{{ item.teacher.id }}" hx-swap="outerHTML">
-                Xóa
-              </button>
-            </td>
-          </tr>
+        <div class="space-y-2">
+          {% for session in sessions %}
+          {% include 'partials/session_item.html' %}
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+        </div>
+      </div>
+    </section>
 
-  <!-- Sessions List -->
-  <div class="bg-white p-4 rounded shadow">
-    <h3 class="text-lg font-semibold mb-4">Buổi học tháng {{ current_month }}</h3>
-    <div class="space-y-2">
-      {% for session in sessions %}
-      {% include 'partials/session_item.html' %}
-      {% endfor %}
-    </div>
-  </div>
+    <!-- Timesheet Section -->
+    <section id="section-timesheet" class="bg-white p-4 rounded shadow hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">Bảng công tháng {{ current_month }}</h3>
+        <a href="/admin/timesheet/export.csv?month={{ current_month }}" 
+           class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Export CSV</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-gray-300 p-2 text-left">Tên giáo viên</th>
+              <th class="border border-gray-300 p-2 text-left">Số giờ</th>
+              <th class="border border-gray-300 p-2 text-left">Tỷ lệ/giờ</th>
+              <th class="border border-gray-300 p-2 text-left">Tổng tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in teacher_hours %}
+            <tr>
+              <td class="border border-gray-300 p-2">{{ item.teacher.name }}</td>
+              <td class="border border-gray-300 p-2">{{ "%.2f"|format(item.hours) }}</td>
+              <td class="border border-gray-300 p-2">{{ "{:,}".format(item.teacher.hourly_rate or 0) }} VND</td>
+              <td class="border border-gray-300 p-2">{{ "{:,}".format((item.hours * (item.teacher.hourly_rate or 0))|int) }} VND</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 <script>
-// Update form action URLs dynamically
+// Sidebar navigation: switch visible section
 document.addEventListener('DOMContentLoaded', function() {
+  const nav = document.getElementById('admin-nav');
+  const buttons = nav.querySelectorAll('button[data-target]');
+  const sections = [
+    '#section-teachers', '#section-classes', '#section-sessions', '#section-timesheet'
+  ].map(id => document.querySelector(id));
+
+  function show(targetId) {
+    sections.forEach(s => s.classList.add('hidden'));
+    const el = document.querySelector(targetId);
+    if (el) el.classList.remove('hidden');
+    buttons.forEach(b => b.classList.remove('bg-slate-700'));
+    const active = [...buttons].find(b => b.getAttribute('data-target') === targetId);
+    if (active) active.classList.add('bg-slate-700');
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => show(b.getAttribute('data-target'))));
+  // default
+  show('#section-teachers');
+
+  // Update add-teacher form action by class select
   const addTeacherForm = document.querySelector('form[hx-post*="add-teacher"]');
   if (addTeacherForm) {
     const classSelect = addTeacherForm.querySelector('select[name="class_id"]');
