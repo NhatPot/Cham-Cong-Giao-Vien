@@ -19,13 +19,13 @@ Hệ thống chấm công cho giáo viên với các tính năng:
 
 **Với PowerShell:**
 ```powershell
-cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+cd "C:\Users\NhatPot\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
 .\setup.ps1
 ```
 
 **Với CMD:**
 ```cmd
-cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+cd "C:\Users\NhatPot\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
 setup.cmd
 ```
 
@@ -46,7 +46,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 #### Với PowerShell:
 ```powershell
 # Bước 1: Mở PowerShell tại thư mục dự án
-cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+cd "C:\Users\NhatPot\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
 
 # Bước 2: Tạo môi trường ảo
 python -m venv .venv
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 #### Với CMD:
 ```cmd
 REM Bước 1: Mở CMD tại thư mục dự án
-cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+cd "C:\Users\NhatPot\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
 
 REM Bước 2: Tạo môi trường ảo
 python -m venv .venv
@@ -97,7 +97,7 @@ conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/ms
 #### Với Anaconda Prompt (khuyến nghị):
 ```cmd
 REM Bước 1: Mở Anaconda Prompt, vào thư mục dự án
-cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+cd "C:\Users\NhatPot\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
 
 REM Bước 2: Tạo và kích hoạt môi trường
 conda create -n chamcong python=3.11 -y
@@ -124,7 +124,7 @@ conda init cmd.exe
 # Sau đó ĐÓNG và mở lại PowerShell/CMD
 
 # Bước 2: Vào thư mục dự án
-cd "C:\Users\MinhNhat\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
+cd "C:\Users\NhatPot\Desktop\Sao Viet\Cham-Cong-Giao-Vien"
 
 # Bước 3: Tạo và kích hoạt môi trường
 conda create -n chamcong python=3.11 -y
