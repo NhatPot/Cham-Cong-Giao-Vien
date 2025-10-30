@@ -1,6 +1,8 @@
 <div id="session-{{ session.id }}" class="border rounded p-3 flex justify-between items-center">
   <div class="space-y-1">
-    <div class="font-medium">Session #{{ session.id }}</div>
+    <div class="font-medium">Session #{{ session.id }}
+      <span class="text-xs text-gray-600 ml-2">Lớp học: {{ session.clazz.name if session.clazz else 'Không rõ' }}</span>
+    </div>
     <form class="flex flex-wrap items-center gap-3" hx-post="/admin/session/{{ session.id }}/update" hx-target="#session-{{ session.id }}" hx-swap="outerHTML">
       <label class="text-sm text-gray-600">Bắt đầu</label>
       <input type="datetime-local" name="start_dt" value="{{ session.start_dt.strftime('%Y-%m-%dT%H:%M') }}" class="p-1 border rounded" />

@@ -65,6 +65,12 @@ def admin_home(request: Request, month: str | None = Query(default=None), db: Se
         ClassSession.start_dt >= month_start,
         ClassSession.start_dt < end_month
     ).order_by(ClassSession.start_dt.desc()).all()
+    # preload class for each session to avoid N+1 in template
+    from sqlalchemy.orm import joinedload
+    sessions = db.query(ClassSession).options(joinedload(ClassSession.clazz)).filter(
+        ClassSession.start_dt >= month_start,
+        ClassSession.start_dt < end_month
+    ).order_by(ClassSession.start_dt.desc()).all()
     
     return templates.TemplateResponse("admin_home.html", {
         "request": request,
