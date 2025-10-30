@@ -15,8 +15,17 @@
   <!-- Main content -->
   <main class="flex-1 space-y-6">
     <div class="bg-blue-600 text-white p-4 rounded">
-      <h1 class="text-2xl font-bold">Admin Panel</h1>
-      <p class="text-blue-100">Quản lý giáo viên, lớp học, buổi học và bảng công</p>
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold">Admin Panel</h1>
+          <p class="text-blue-100">Quản lý giáo viên, lớp học, buổi học và bảng công</p>
+        </div>
+        <form method="get" action="/admin" class="flex items-center gap-2 bg-blue-500/40 p-2 rounded">
+          <label for="month" class="text-sm">Tháng:</label>
+          <input id="month" name="month" type="month" value="{{ current_month }}" class="text-black p-1 rounded">
+          <button class="bg-white text-blue-700 px-3 py-1 rounded">Áp dụng</button>
+        </form>
+      </div>
     </div>
 
     <!-- Teachers Section -->

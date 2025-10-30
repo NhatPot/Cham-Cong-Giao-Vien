@@ -24,13 +24,23 @@ def require_admin(x_admin_key: str | None = Header(default=None, alias="X-ADMIN-
 
 
 @router.get("/admin", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
-def admin_home(request: Request, db: Session = Depends(get_db)):
+def admin_home(request: Request, month: str | None = Query(default=None), db: Session = Depends(get_db)):
     # Auto-close overdue checkins
     auto_close_overdue(db)
     
-    # Get current month data
+    # Determine target month (YYYY-MM)
     now = datetime.now()
-    current_month = now.strftime("%Y-%m")
+    if month:
+        try:
+            year, mon = map(int, month.split("-"))
+            current_month = f"{year:04d}-{mon:02d}"
+            month_start = datetime(year, mon, 1)
+        except Exception:
+            current_month = now.strftime("%Y-%m")
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        current_month = now.strftime("%Y-%m")
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
     # Get all teachers with their hours
     teachers = db.query(Teacher).all()
@@ -45,15 +55,14 @@ def admin_home(request: Request, db: Session = Depends(get_db)):
     # Get all classes
     classes = db.query(Class).all()
     
-    # Get all sessions for current month
-    start_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    if now.month == 12:
-        end_month = now.replace(year=now.year + 1, month=1, day=1)
+    # Get all sessions for selected month
+    if month_start.month == 12:
+        end_month = month_start.replace(year=month_start.year + 1, month=1, day=1)
     else:
-        end_month = now.replace(month=now.month + 1, day=1)
+        end_month = month_start.replace(month=month_start.month + 1, day=1)
     
     sessions = db.query(ClassSession).filter(
-        ClassSession.start_dt >= start_month,
+        ClassSession.start_dt >= month_start,
         ClassSession.start_dt < end_month
     ).order_by(ClassSession.start_dt.desc()).all()
     
